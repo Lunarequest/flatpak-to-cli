@@ -4,7 +4,6 @@ import subprocess
 import configparser
 import logging as log
 import asyncio
-import getpass
 import gi
 
 gi.require_version("Flatpak", "1.0")
