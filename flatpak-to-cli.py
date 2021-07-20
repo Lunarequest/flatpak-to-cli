@@ -32,6 +32,7 @@ async def get_command(flatpak, command) -> str:
                         line.replace("<name>", "")
                         .replace("</name>", "")
                         .strip()
+                        .replace(" ", "-")
                         .lower()
                     )
                 if flatpak in line:
