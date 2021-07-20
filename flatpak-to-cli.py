@@ -5,6 +5,13 @@ import configparser
 import logging as log
 import asyncio
 import getpass
+import gi
+
+gi.require_version("Flatpak", "1.0")
+gi.require_version("AppStreamGlib", "1.0")
+
+from gi.repository import Flatpak
+
 
 async def get_ini(flatpak):
     out = subprocess.run(
@@ -16,27 +23,14 @@ async def get_ini(flatpak):
 
 
 async def get_command(flatpak, command) -> str:
-    if flatpak == command:
+    if flatpak.replace("x86_64/stable", "").strip("/") == command:
         # this is for stuff like FlatSeal
-        with open(
-            f"/home/{getpass.getuser()}/.local/share/flatpak/appstream/flathub/x86_64/active/appstream.xml",
-            "r",
-        ) as f:
-            next_line = False
-            content = f.readlines()
-            for line in content:
-                if next_line:
-                    return (
-                        line.replace("<name>", "")
-                        .replace("</name>", "")
-                        .strip()
-                        .replace(" ", "-")
-                        .lower()
-                    )
-                if flatpak in line:
-                    next_line = True
-            print(f"unable to find alias for {flatpak} falling back to {flatpak}")
-            return flatpak
+        info = flatpak.split("/")
+        installation = Flatpak.get_system_installations()[0]
+        app = installation.get_installed_ref(
+            Flatpak.RefKind(0), info[0], info[1], info[2]
+        )
+        return app.get_appdata_name().lower()
     else:
         return command
 
@@ -62,7 +56,7 @@ async def flatpak_to_alias():
                     application = ini["Application"]
                     command_to_run = f"flatpak run {application['name']} &"
                     command = await get_command(
-                        flatpak.replace("x86_64/stable", "").strip("/"),
+                        flatpak,
                         application["command"],
                     )
                     if command in aliases:
