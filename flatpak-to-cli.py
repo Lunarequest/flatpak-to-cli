@@ -13,7 +13,7 @@ gi.require_version("AppStreamGlib", "1.0")
 from gi.repository import Flatpak
 
 
-async def get_ini(flatpak):
+async def get_ini(flatpak: str):
     out = subprocess.run(
         ["flatpak", "info", "-m", f"{flatpak}"], stdout=subprocess.PIPE
     )
@@ -22,7 +22,7 @@ async def get_ini(flatpak):
     return parser
 
 
-async def get_command(flatpak, command) -> str:
+async def get_command(flatpak: str, command: str) -> str:
     if flatpak.replace("x86_64/stable", "").strip("/") == command:
         # this is for stuff like FlatSeal
         info = flatpak.split("/")
@@ -30,7 +30,7 @@ async def get_command(flatpak, command) -> str:
         app = installation.get_installed_ref(
             Flatpak.RefKind(0), info[0], info[1], info[2]
         )
-        return app.get_appdata_name().lower()
+        return app.get_appdata_name().lower().replace(" ", "-")
     else:
         return command
 
