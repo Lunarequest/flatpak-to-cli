@@ -8,6 +8,8 @@ This was inspired by pervious attempts to automate the aliasing of `flatpak run`
 
 - This script also auto changes apps with conflicting Launch names to the last part of their flatpak id in lower cases when the binary conflicts with another one, an example would be vscodium and vscode.
 
+- All packages required are in Stdlib in python.
+
 ## Cons
 
 - Slow with a large amount of flatpaks that present situations like flatseal. This should be a very rare issues.

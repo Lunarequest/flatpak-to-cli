@@ -4,8 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-xmltodict = "*"
-beautifulsoup4 = "*"
 
 [dev-packages]
 mypy = "*"

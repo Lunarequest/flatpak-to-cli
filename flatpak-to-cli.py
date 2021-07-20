@@ -5,8 +5,6 @@ import configparser
 import logging as log
 import asyncio
 import getpass
-from bs4 import BeautifulSoup as bs
-
 
 async def get_ini(flatpak):
     out = subprocess.run(
