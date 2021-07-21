@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import subprocess
 import configparser
 import logging as log
 import asyncio
@@ -12,12 +11,9 @@ gi.require_version("AppStreamGlib", "1.0")
 from gi.repository import Flatpak
 
 
-async def get_command_from_ini(flatpak: str):
-    out = subprocess.run(
-        ["flatpak", "info", "-m", f"{flatpak}"], stdout=subprocess.PIPE
-    )
+async def get_command_from_ini(flatpak: Flatpak.InstalledRef):
     parser = configparser.ConfigParser()
-    parser.read_string(out.stdout.decode("utf-8"))
+    parser.read_string(flatpak.load_metadata().get_data().decode("utf-8"))
     return parser["Application"]["command"]
 
 
@@ -47,7 +43,7 @@ async def flatpak_to_alias():
                 pass
             else:
                 flatpak_id = app.get_name()
-                command = await get_command_from_ini(flatpak_id)
+                command = await get_command_from_ini(app)
                 command = await check_for_fallback_command(
                     flatpak_id, command, arch, app.get_branch()
                 )
