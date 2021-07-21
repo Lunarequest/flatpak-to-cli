@@ -10,25 +10,22 @@ gi.require_version("AppStreamGlib", "1.0")
 
 from gi.repository import Flatpak
 
+arch = Flatpak.get_default_arch()
 
-async def get_command_from_ini(flatpak: Flatpak.InstalledRef):
+
+async def gen_command(flatpak: Flatpak.InstalledRef) -> str:
     parser = configparser.ConfigParser()
-    parser.read_string(flatpak.load_metadata().get_data().decode("utf-8"))
-    return parser["Application"]["command"]
-
-
-async def check_for_fallback_command(
-    flatpak_id: str, command: str, arch: str, branch: str
-) -> str:
-    if flatpak_id == command:
-        # this is for stuff like FlatSeal
-        installation = Flatpak.get_system_installations()[0]
-        app = installation.get_installed_ref(
-            Flatpak.RefKind(0), flatpak_id, arch, branch
-        )
-        return app.get_appdata_name().lower().replace(" ", "-")
-    else:
+    try:
+        parser.read_string(flatpak.load_metadata().get_data().decode("utf-8"))
+        command = parser["Application"]["command"]
+        flatpak_id = flatpak.get_name()
+        if flatpak_id == command:
+            # this is for stuff like FlatSeal
+            return flatpak.get_appdata_name().lower().replace(" ", "-")
         return command
+    except Exception:
+        flatpak_id = flatpak.get_name()
+        return flatpak_id.split(".")[-1]
 
 
 async def flatpak_to_alias():
@@ -37,27 +34,20 @@ async def flatpak_to_alias():
     installations = Flatpak.get_system_installations()
     for installation in installations:
         apps = installation.list_installed_refs_by_kind(Flatpak.RefKind(0))
-        arch = Flatpak.get_default_arch()
         for app in apps:
             if "BaseApp" in app.get_name():
-                pass
+                pass  # for stuff like the Electron base app
             else:
+                command = await gen_command(app)
                 flatpak_id = app.get_name()
-                command = await get_command_from_ini(app)
-                command = await check_for_fallback_command(
-                    flatpak_id, command, arch, app.get_branch()
-                )
                 if command in aliases:
-                    command = flatpak_id.split(".")[
-                        -1
-                    ]  # last part of flatpak id,normally app name
+                    # last part of flatpak id,normally app name
+                    command = flatpak_id.split(".")[-1]
                     aliases.append(command)
-                    alias_file += f"alias {command}='flatpak run {flatpak_id} &'\n"
-                elif command:
-                    aliases.append(command)
-                    alias_file += f"alias {command}='flatpak run {flatpak_id} &'\n"
+                    alias_file += f"alias {command}='flatpak run {flatpak_id}'\n"
                 else:
-                    log.debug(f"{flatpak_id} has no command")
+                    aliases.append(command)
+                    alias_file += f"alias {command}='flatpak run {flatpak_id}'\n"
         print(alias_file)
         with open("flatpak_alias.sh", "w") as f:
             f.write(alias_file)
